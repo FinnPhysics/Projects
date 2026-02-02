@@ -1,0 +1,117 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from matplotlib.patches import Circle
+
+# Define the constants
+G = 6.674e-11  # Gravitational constant in N m^2/kg^2
+M_neutron_star = 1.4 * 1.989e30  # Mass of the neutron star in kg (1.4 solar masses)
+m_person = 75  # Mass of the person in kg
+h_person = 1.8  # Height of the person in m
+radius_neutron_star = 10000 # Radius of the neutron star in meters
+
+def tidal_force(r):
+    """
+    Calculates the tidal force at a given distance r.
+    This is derived from the differential equation of gravitational force.
+    """
+    # Prevent division by zero if r gets too small
+    r = np.maximum(r, 1.0)
+    return (2 * G * M_neutron_star * m_person * h_person) / (r**3)
+
+def gravitational_force(r):
+    """
+    Calculates the total gravitational force at a given distance r.
+    """
+    # Prevent division by zero
+    r = np.maximum(r, 1.0)
+    return (G * M_neutron_star * m_person) / (r**2)
+
+# Set up the figure and axis for the animation
+fig, ax = plt.subplots(1, 1, figsize=(8, 10))
+fig.suptitle('Position of a Person Approaching a Neutron Star', fontsize=16)
+
+# --- Subplot: Positional Visualization ---
+ax.set_title("Visualization with Spaghettification")
+ax.set_xlim(-radius_neutron_star * 2, radius_neutron_star * 2)
+ax.set_xlabel("Lateral Position (m)")
+ax.set_ylabel("Distance from Star's Center (m)")
+ax.grid(True)
+ax.set_facecolor('black') # Dark space background
+
+# Add the neutron star
+star_patch = Circle((0, 0), radius_neutron_star, color='orange', zorder=5, label='Neutron Star')
+ax.add_patch(star_patch)
+
+# Create the person's initial shape (head, body)
+body, = ax.plot([0, 0], [0, 0], '-', lw=5, color='cyan', zorder=10)
+head, = ax.plot([0], [0], 'o', markersize=10, color='cyan', zorder=11)
+
+# Text displays for forces and distance on the main plot
+tidal_force_text = ax.text(0.05, 0.95, '', transform=ax.transAxes, color='white', ha='left', bbox={'facecolor': 'black', 'alpha': 0.5, 'pad': 2})
+grav_force_text = ax.text(0.05, 0.90, '', transform=ax.transAxes, color='white', ha='left', bbox={'facecolor': 'black', 'alpha': 0.5, 'pad': 2})
+distance_text = ax.text(0.05, 0.85, '', transform=ax.transAxes, color='white', ha='left', bbox={'facecolor': 'black', 'alpha': 0.5, 'pad': 2})
+
+
+# --- Data for Animation ---
+# Start much further away: 50,000 km
+start_distance_km = 50000
+start_distance_m = start_distance_km * 1000
+# Use logspace for distances to get more frames when forces change rapidly
+distances = np.logspace(np.log10(start_distance_m), np.log10(radius_neutron_star), 300)
+tidal_forces = tidal_force(distances)
+grav_forces = gravitational_force(distances)
+
+# Animation initialization function
+def init():
+    tidal_force_text.set_text('')
+    grav_force_text.set_text('')
+    distance_text.set_text('')
+    
+    # Initialize person's position at the starting distance
+    head.set_data([0], [start_distance_m])
+    body.set_data([0,0],[start_distance_m - h_person/2, start_distance_m + h_person/2])
+    ax.set_ylim(0, start_distance_m * 1.1)
+
+    return [tidal_force_text, grav_force_text, distance_text, head, body]
+
+# Animation update function
+def animate(i):
+    # Update the text display
+    current_tidal = tidal_forces[i]
+    current_grav = grav_forces[i]
+    current_distance_km = distances[i] / 1000
+    tidal_force_text.set_text(f'Tidal Force: {current_tidal:,.2f} N')
+    grav_force_text.set_text(f'Grav. Force: {current_grav:,.2e} N')
+    distance_text.set_text(f'Distance: {current_distance_km:,.2f} km')
+    
+    # --- Update Positional Plot ---
+    person_center_y = distances[i]
+    
+    # Spaghettification effect: exaggerate the stretch for visibility
+    stretch_factor = 1 + current_tidal / 1000 
+    stretched_height = h_person * stretch_factor
+    
+    # Update body and head positions based on stretching
+    body_y_coords = [person_center_y - stretched_height / 2, person_center_y + stretched_height / 2]
+    head_y_coord = person_center_y + stretched_height / 2
+    
+    body.set_data([0, 0], body_y_coords)
+    head.set_data([0], head_y_coord)
+    
+    # Update the y-axis to zoom in on the person
+    view_height = max(person_center_y * 0.4, stretched_height * 5, radius_neutron_star * 5)
+    bottom_lim = max(0, person_center_y - view_height / 2)
+    top_lim = person_center_y + view_height / 2
+    ax.set_ylim(bottom_lim, top_lim)
+
+    return [tidal_force_text, grav_force_text, distance_text, head, body]
+
+# Create the animation
+# blit=False is more robust for complex plots with changing axes
+ani = animation.FuncAnimation(fig, animate, frames=len(distances),
+                              init_func=init, blit=False, interval=50, repeat=False) 
+
+plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+plt.show()
+

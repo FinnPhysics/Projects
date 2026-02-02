@@ -28,4 +28,5 @@ A key part of the workflow involved distinguishing between numerical integration
 ![Orbit Animation](animations/stable_orbit.gif)
 
 ---
-Author: MSc Theoretical Physics Student
+Author: Finn Ditum
+

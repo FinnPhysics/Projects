@@ -25,9 +25,8 @@ The project includes a stability map plotting initial orbital radius against rel
 Visualizations of the orbits include fading history trails to illustrate the precession and perturbation of stable vs. unstable candidates.
 
 ## Repository Structure
-- Kepler_Stability_Analysis.ipynb: The complete documented code and numerical derivation.
+- Solar_System_Stability.ipynb: The complete documented code and numerical derivation.
 - plots/: High-resolution exports of the stability maps and energy conservation plots.
-- animations/: GIF renders of the orbital simulations.
 - LICENSE: MIT License.
 
 ## Requirements
